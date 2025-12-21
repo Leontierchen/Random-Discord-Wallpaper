@@ -1,8 +1,7 @@
 # Random Discord Hintergrund — README
-Dies ist mein Discord. Bei Problemen meldet euch dort -> https://discord.gg/jw9B5BP7
 Deutsch
 -------
-
+Dies ist mein Discord. Bei Problemen meldet euch dort -> https://discord.gg/jw9B5BP7
 Kurzbeschreibung
 
 Dieses kleine Tool wählt zufällig ein Hintergrundbild aus einem Quellordner aus, kopiert es in den Vencord-Theme-Ordner, aktualisiert die `Translucence.theme.css`-Datei (Variable `--app-bg`) und passt die Accent-Farben anhand einer ermittelten "vibranten" Farbe automatisch an.
@@ -97,4 +96,5 @@ License / Notes
 
 - This is a helper utility. Always keep backups of your theme files.
 - Modify the source freely for personal use. Reupload or redistribution is not allowed without permission.
+
 
