@@ -446,22 +446,60 @@ namespace Random_Discord_Hintergrund
 
             try
             {
-                string? exePath = Assembly.GetEntryAssembly()?.Location;
-                if (string.IsNullOrEmpty(exePath))
+                // Prefer EntryAssembly location
+                string? assemblyPath = Assembly.GetEntryAssembly()?.Location;
+                string? runCommand = null;
+
+                if (!string.IsNullOrEmpty(assemblyPath))
                 {
-                    exePath = Process.GetCurrentProcess().MainModule?.FileName;
+                    // If assembly path points to a DLL (framework-dependent), try to prefer an .exe next to it
+                    if (assemblyPath.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var exeCandidate = Path.ChangeExtension(assemblyPath, ".exe");
+                        if (File.Exists(exeCandidate))
+                        {
+                            runCommand = "\"" + exeCandidate + "\"";
+                        }
+                        else
+                        {
+                            // Fall back to host process (usually dotnet) with dll as argument
+                            var host = Process.GetCurrentProcess().MainModule?.FileName;
+                            if (!string.IsNullOrEmpty(host))
+                            {
+                                runCommand = "\"" + host + "\" \"" + assemblyPath + "\"";
+                            }
+                            else
+                            {
+                                // Last resort: quote the dll path (may prompt the user on startup)
+                                runCommand = "\"" + assemblyPath + "\"";
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // assembly is an exe
+                        runCommand = "\"" + assemblyPath + "\"";
+                    }
                 }
 
-                if (string.IsNullOrEmpty(exePath))
+                // If still unknown, try current process main module
+                if (string.IsNullOrEmpty(runCommand))
+                {
+                    var proc = Process.GetCurrentProcess();
+                    var procExe = proc.MainModule?.FileName;
+                    if (!string.IsNullOrEmpty(procExe))
+                    {
+                        runCommand = "\"" + procExe + "\"";
+                    }
+                }
+
+                if (string.IsNullOrEmpty(runCommand))
                     return;
 
-                // CA1416-Fix: Zugriff auf Registry nur auf Windows
-                // Die Methode ist bereits mit [SupportedOSPlatform("windows")] markiert,
-                // daher ist der Aufruf hier jetzt konform.
                 using var key = Registry.CurrentUser.OpenSubKey(@"Software\\Microsoft\\Windows\\CurrentVersion\\Run", true);
                 if (key == null) return;
-                key.SetValue("RandomDiscordHintergrund", '"' + exePath + '"');
-                Console.WriteLine(Localization.T("autorun.registered"));
+                key.SetValue("RandomDiscordHintergrund", runCommand);
+                Console.WriteLine(Localization.T("autorun.registered") + " -> " + runCommand);
             }
             catch (Exception ex)
             {
