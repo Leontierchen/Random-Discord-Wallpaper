@@ -1,4 +1,5 @@
 {
+  "language.name": "Deutsch",
   "source.invalid": "Kein gültiger Quellordner angegeben — beende.",
   "vencord.invalid": "Kein gültiger Vencord-Ordner angegeben — beende.",
   "autorun.ask": "Willst du, dass dieses Programm bei Windows-Start automatisch ausgeführt wird?",
@@ -17,7 +18,8 @@
   "random.found": "Zufallsbild gefunden: {0}, kopiere",
   "copy.error": "Fehler beim Kopieren: {0}",
   "copied.update.theme": "Kopiert, passe Vencord Theme an",
-  "vibrant.color": "Vibrant Color HSL: H={0}, S={1}%, L={2}%",
+  "vibrant.color.new": "Neue Akzentfarben",
+  "vibrant.color.old": "Alte Akzentfarben",
   "writing.theme.error": "Fehler beim Schreiben der Theme-Datei: {0}",
   "delete.old.warn": "Warnung: altes Bild konnte nicht entfernt werden: {0}",
   "done": "Fertig!",
@@ -35,5 +37,10 @@
   "source.cancel.info": "Gib 'cancel' oder leer ein, um abzubrechen.",
   "source.input": "SourceDirectory: ",
   "source.notexist": "Der angegebene Ordner existiert nicht. Bitte erneut versuchen.",
-  "log.written": "Log geschrieben: {0}"
+  "log.written": "Log geschrieben: {0}",
+  "bright.accent.used": "Helle Akzentfarbe wird verwendet.",
+  "program.exit.nopause": "Pause beim Beenden (Autostart deaktiviert).",
+  "program.exit.debug": "Debug-Modus — Pause zur Inspektion.",
+  "program.exit.error.occured": "Ein Fehler ist aufgetreten. Bitte kontaktiere den Entwickler und füge die Log-Datei bei. Discord (https://discord.gg/fxaSm3aU6W)",
+  "error.details": "Fehlerdetails: {0}"
 }

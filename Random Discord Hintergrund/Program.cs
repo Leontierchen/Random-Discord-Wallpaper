@@ -1,17 +1,12 @@
-﻿using System;
-using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Collections.Generic;
-using System.Runtime.Versioning;
-using System.Text.Json;
-using System.Text.RegularExpressions;
-using System.Net.Http;
-using System.Text;
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using System.Diagnostics;
+using System.Drawing;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
+using System.Text;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace Random_Discord_Hintergrund
 {
@@ -22,7 +17,9 @@ namespace Random_Discord_Hintergrund
     {
         // Zufallsgenerator für die Auswahl des Bildes
         private static readonly Random _rng = new();
-
+        public static readonly string AppName = "Random Discord Hintergrund";
+        public static readonly string AppVersion = "0.3";
+        public static readonly bool IsDebug = false;
         // Logging helpers
         private static StringWriter? _logBuffer;
         private static TextWriter? _originalOut;
@@ -51,32 +48,111 @@ namespace Random_Discord_Hintergrund
             var tee = new TeeTextWriter(_originalOut, _logBuffer);
             Console.SetOut(tee);
             Console.SetError(tee);
+            // -------------------- Programmstart --------------------
+            Console.WriteLine(AppName + " v" + AppVersion);
+            if (IsDebug)
+                Console.WriteLine("Debug out enabled");
 
             // -------------------- Konfiguration aus Datei (oder interaktiv) --------------------
             var config = LoadConfig();
+            if (IsDebug)
+            {
+                if (config != null)
+                {
+                    Console.WriteLine("Geladene Konfiguration:");
+                    foreach (var prop in typeof(Config).GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                    {
+                        var value = prop.GetValue(config);
+                        Console.WriteLine($"  {prop.Name}: {value}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Keine gültige Konfiguration geladen.");
+                }
+            }
             if (config == null)
             {
-                Console.WriteLine("Keine Konfigurationsdatei gefunden — wechsle in interaktiven Modus.");
+                Console.WriteLine("Keine Konfigurationsdatei gefunden — erstelle neu / Found no Config file - creating new");
                 config = new Config();
             }
 
             // Sprache auswählen, falls noch nicht gesetzt
             if (!config.LanguageSet)
             {
-                Console.WriteLine("Choose language / Sprache wählen: [de/en]");
+                if (IsDebug)
+                    Console.WriteLine("Sprache ist nicht gesetzt, frage den Benutzer.");
+                // Verfügbare Sprachen ermitteln (Ordner 'lang' neben der EXE)
+                var langDir = Path.Combine(AppContext.BaseDirectory, "lang");
+                if (!Directory.Exists(langDir))
+                {
+                    Directory.CreateDirectory(langDir);
+                }
+                var avail = Directory.GetFiles(langDir, "*.json")
+                    .Select(f => Path.GetFileNameWithoutExtension(f))
+                    .Where(f => !string.IsNullOrEmpty(f))
+                    .ToArray();
+                // Versuche, für jeden Sprachcode den vollen Namen aus der entsprechenden language-Datei zu lesen
+                var displayNames = new string[avail.Length];
+                for (int i = 0; i < avail.Length; i++)
+                {
+                    var code = avail[i];
+                    var langFile = Path.Combine(AppContext.BaseDirectory, "lang", code + ".json");
+                    string fullName = code; // fallback
+                    try
+                    {
+                        if (File.Exists(langFile))
+                        {
+                            var bytes = File.ReadAllBytes(langFile);
+                            var json = Encoding.UTF8.GetString(bytes);
+                            using var doc = JsonDocument.Parse(json);
+                            if (doc.RootElement.TryGetProperty("language.name", out var nameProp))
+                            {
+                                fullName = nameProp.GetString() ?? code;
+                            }
+                        }
+                    }
+                    catch { /* ignore parsing errors */ }
+                    displayNames[i] = fullName;
+                }
+
+                Console.WriteLine($"Choose language / Sprache wählen: [{string.Join('/', avail)}]");
+
+                // Zeige nummerierte Liste zur einfachen Auswahl mit vollen Namen
+                for (int i = 0; i < avail.Length; i++)
+                {
+                    Console.WriteLine($"  {i + 1}) {avail[i]} - {displayNames[i]}");
+                }
+
                 while (true)
                 {
-                    Console.Write("Language (de/en): ");
-                    var lang = Console.ReadLine()?.Trim().ToLowerInvariant();
-                    if (string.IsNullOrEmpty(lang)) continue;
-                    if (lang == "de" || lang == "en")
+                    Console.Write($"Language ({string.Join('/', avail)} or number): ");
+                    var langIn = Console.ReadLine()?.Trim();
+                    if (string.IsNullOrEmpty(langIn)) continue;
+
+                    // Numerische Auswahl (1-basiert)
+                    if (int.TryParse(langIn, out var bla))
                     {
-                        config.Language = lang;
+                        if (bla >= 1 && bla <= avail.Length)
+                        {
+                            config.Language = avail[bla - 1];
+                            config.LanguageSet = true;
+                            try { SaveConfig(config, GetConfigFilePath()); } catch { }
+                            break;
+                        }
+                    }
+
+                    var langLower = langIn.ToLowerInvariant();
+                    // Akzeptiere direkten Sprachcode, wenn er in der Liste vorhanden ist
+                    if (Array.Exists(avail, a => a.Equals(langLower, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        config.Language = langLower;
                         config.LanguageSet = true;
                         try { SaveConfig(config, GetConfigFilePath()); } catch { }
                         break;
                     }
-                    Console.WriteLine("Ungültige Eingabe. Bitte 'de' oder 'en' eingeben.");
+
+                    Console.WriteLine("Ungültige Eingabe - Invalid Input");
                 }
             }
 
@@ -89,8 +165,7 @@ namespace Random_Discord_Hintergrund
                 config.SourceDirectory = AskSourceDirectory(config.SourceDirectory);
                 if (string.IsNullOrEmpty(config.SourceDirectory))
                 {
-                    Console.WriteLine(Localization.T("source.invalid"));
-                    WriteLogAndExit(1);
+                    WriteLogAndExit(3, "0"); // exit code 3 = invalid source directory
                     return;
                 }
             }
@@ -101,8 +176,7 @@ namespace Random_Discord_Hintergrund
                 config.VencordDirectory = VencordDirectory(config.VencordDirectory);
                 if (string.IsNullOrEmpty(config.VencordDirectory))
                 {
-                    Console.WriteLine(Localization.T("vencord.invalid"));
-                    WriteLogAndExit(1);
+                    WriteLogAndExit(4, "0"); // exit code 4 = invalid Vencord directory
                     return;
                 }
             }
@@ -139,7 +213,8 @@ namespace Random_Discord_Hintergrund
                 }
 
                 SaveConfig(config, cfgPath);
-                Console.WriteLine(string.Format(Localization.T("config.saved"), cfgPath));
+                if (IsDebug)
+                    Console.WriteLine(string.Format(Localization.T("config.saved"), cfgPath));
 
                 // Registrierung für Autostart (sofern gewünscht)
                 try
@@ -163,7 +238,7 @@ namespace Random_Discord_Hintergrund
             }
             catch (Exception ex)
             {
-                Console.WriteLine(string.Format(Localization.T("config.save.error"), ex.Message));
+                WriteLogAndExit(11, ex.Message); // exit code 11 = config save error
             }
 
             // Quelle mit möglichen Hintergrundbildern
@@ -193,8 +268,7 @@ namespace Random_Discord_Hintergrund
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(string.Format(Localization.T("theme.download.error"), ex.Message));
-                    WriteLogAndExit(1);
+                    WriteLogAndExit(5, ex.Message); // exit code 5 = theme file download error
                     return;
                 }
             }
@@ -207,8 +281,7 @@ namespace Random_Discord_Hintergrund
             }
             catch (Exception ex)
             {
-                Console.WriteLine(string.Format(Localization.T("theme.read.error"), ex.Message));
-                WriteLogAndExit(1);
+                WriteLogAndExit(6, ex.Message); // exit code 6 = theme file read error
                 return; // unreachable, aber kompiliert sauber
             }
 
@@ -241,8 +314,7 @@ namespace Random_Discord_Hintergrund
             string? randomimage = GetRandomFile(sourcedirectory, filenameold);
             if (string.IsNullOrEmpty(randomimage))
             {
-                Console.WriteLine(Localization.T("no.new.image"));
-                WriteLogAndExit(1);
+                WriteLogAndExit(7, "0"); // exit code 7 = no new image found
                 return;
             }
 
@@ -256,8 +328,7 @@ namespace Random_Discord_Hintergrund
             }
             catch (Exception ex)
             {
-                Console.WriteLine(string.Format(Localization.T("copy.error"), ex.Message));
-                WriteLogAndExit(1);
+                WriteLogAndExit(8, ex.Message); // exit code 8 = copy error
                 return;
             }
 
@@ -288,6 +359,7 @@ namespace Random_Discord_Hintergrund
             //--accent-hue: 60;
             //--accent-saturation: 100 %;
             //--accent-lightness: 99 %;
+            //--accent-text-color: hsl(0,0%,100%);
 
             // -------------------- Bestimme "vibrante" Farbe des Bildes --------------------
             // Liefert H_S_L als String (z.B. "210.0_0.75_0.45")
@@ -301,14 +373,28 @@ namespace Random_Discord_Hintergrund
             vibrant[1] = (float.Parse(vibrant[1]) * 100).ToString("F0").Replace(',', '.');
             vibrant[2] = (float.Parse(vibrant[2]) * 100).ToString("F0").Replace(',', '.');
 
-            Console.WriteLine(string.Format(Localization.T("vibrant.color"), vibrant[0], vibrant[1], vibrant[2]));
+            float contrast = Convert.ToInt32(vibrant[2]);
+
+            if (config.AccentColorBright)
+            {
+                if (contrast < 50)
+                {
+                    contrast = 100 - contrast;
+                    Console.WriteLine(Localization.T("bright.accent.used"));
+                }
+            }
+            vibrant[2] = contrast.ToString("F0").Replace(',', '.');
+
 
             // Finde die Zeilen in der CSS-Datei, die die Accent-Variablen enthalten
             var line1 = themecontent.Split('\n').FirstOrDefault(l => l.Contains("--accent-hue:"));
             var line2 = themecontent.Split('\n').FirstOrDefault(l => l.Contains("--accent-saturation:"));
             var line3 = themecontent.Split('\n').FirstOrDefault(l => l.Contains("--accent-lightness:"));
+            var line4 = themecontent.Split('\n').FirstOrDefault(l => l.Contains("--accent-text-color:"));
 
-            Console.WriteLine($"{line1}\n{line2}\n{line3}");
+            // Konsolenausgabe alter Akzentfarben
+            Console.WriteLine(Localization.T("vibrant.color.old"));
+            Console.WriteLine($"{line1}\n{line2}\n{line3}\n{line4}");
 
             // Ersetze diese Zeilen, falls vorhanden, mit den neuen Werten
             if (line1 != null)
@@ -318,6 +404,20 @@ namespace Random_Discord_Hintergrund
             if (line3 != null)
                 themecontent = themecontent.Replace(line3, $"    --accent-lightness: {vibrant[2]}%;");
 
+            // Optional: passe auch die Textfarbe an, je nach Lightness
+            if (line4 != null)
+                if (contrast >= 50)
+                    themecontent = themecontent.Replace(line4, $"    --accent-text-color: hsl(0,0%,0%);");
+                else
+                    themecontent = themecontent.Replace(line4, $"    --accent-text-color: hsl(0,0%,100%);");
+
+            // Konsolenausgabe neuer Akzentfarben
+            line1 = themecontent.Split('\n').FirstOrDefault(l => l.Contains("--accent-hue:"));
+            line2 = themecontent.Split('\n').FirstOrDefault(l => l.Contains("--accent-saturation:"));
+            line3 = themecontent.Split('\n').FirstOrDefault(l => l.Contains("--accent-lightness:"));
+            line4 = themecontent.Split('\n').FirstOrDefault(l => l.Contains("--accent-text-color:"));
+            Console.WriteLine(Localization.T("vibrant.color.new"));
+            Console.WriteLine($"{line1}\n{line2}\n{line3}\n{line4}");
             // Schreibe die geänderte Theme-Datei zurück
             try
             {
@@ -325,8 +425,7 @@ namespace Random_Discord_Hintergrund
             }
             catch (Exception ex)
             {
-                Console.WriteLine(string.Format(Localization.T("writing.theme.error"), ex.Message));
-                WriteLogAndExit(1);
+                WriteLogAndExit(9, ex.Message); // exit code 9 = theme file write error
                 return;
             }
 
@@ -344,14 +443,13 @@ namespace Random_Discord_Hintergrund
             }
 
             Console.WriteLine(Localization.T("done"));
-
-            if (!config.AutoRun)
-            {
-                Console.WriteLine(Localization.T("program.exit.pause"));
-                Console.ReadLine();
-            }
-
-            WriteLogAndExit(0);
+            if (IsDebug)
+                WriteLogAndExit(2, "0"); // exit code 2 = debug mode
+            else if (!config.AutoRun)
+                WriteLogAndExit(1, "0"); // exit code 1 = no pause
+            else
+                WriteLogAndExit(0, "0"); // normal exit
+            // -------------- Ende des Hauptrogramms ----------------
         }
 
         /// <summary>
@@ -373,7 +471,7 @@ namespace Random_Discord_Hintergrund
             // Ausschluss des aktuell verwendeten Bildes (nur wenn filenameOld != null)
             var candidates = string.IsNullOrEmpty(filenameOld)
                 ? files
-                : [.. files.Where(f => Path.GetFileName(f) != filenameOld)];
+                : files.Where(f => Path.GetFileName(f) != filenameOld).ToArray();
 
             if (candidates.Length == 0)
                 return null;
@@ -388,13 +486,27 @@ namespace Random_Discord_Hintergrund
         /// </summary>
         private static Config? LoadConfig()
         {
+            if (IsDebug)
+                Console.WriteLine("Lade Konfiguration...");
+
             var possible = new[] {
                 Path.Combine(AppContext.BaseDirectory, "config.json"),
                 Path.Combine(Directory.GetCurrentDirectory(), "config.json"),
-                Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "config.json")
+                Path.Combine(AppContext.BaseDirectory, "lang", "config.json"),
+                Path.Combine(AppContext.BaseDirectory, "log", "config.json"),
+                Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "config.json"),
             };
-
+            if (IsDebug)
+            {
+                Console.WriteLine("Suche nach config.json in folgenden Pfaden:");
+                foreach (var p in possible)
+                {
+                    Console.WriteLine("  " + p);
+                }
+            }
             string? found = possible.FirstOrDefault(File.Exists);
+            if (IsDebug)
+                Console.WriteLine("Config gefunden in: " + found);
             if (found == null) return null;
 
             try
@@ -442,72 +554,76 @@ namespace Random_Discord_Hintergrund
         [SupportedOSPlatform("windows")]
         private static void EnsureStartupRegistered(Config cfg)
         {
-            if (!cfg.AutoRun) return;
-
-            try
+            if (!cfg.AutoRunSet)
             {
-                // Prefer EntryAssembly location
-                string? assemblyPath = Assembly.GetEntryAssembly()?.Location;
-                string? runCommand = null;
-
-                if (!string.IsNullOrEmpty(assemblyPath))
+                if (!cfg.AutoRun)
                 {
-                    // If assembly path points to a DLL (framework-dependent), try to prefer an .exe next to it
-                    if (assemblyPath.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+                    try
                     {
-                        var exeCandidate = Path.ChangeExtension(assemblyPath, ".exe");
-                        if (File.Exists(exeCandidate))
+                        // Prefer EntryAssembly location
+                        string? assemblyPath = Assembly.GetEntryAssembly()?.Location;
+                        string? runCommand = null;
+
+                        if (!string.IsNullOrEmpty(assemblyPath))
                         {
-                            runCommand = "\"" + exeCandidate + "\"";
-                        }
-                        else
-                        {
-                            // Fall back to host process (usually dotnet) with dll as argument
-                            var host = Process.GetCurrentProcess().MainModule?.FileName;
-                            if (!string.IsNullOrEmpty(host))
+                            // If assembly path points to a DLL (framework-dependent), try to prefer an .exe next to it
+                            if (assemblyPath.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
                             {
-                                runCommand = "\"" + host + "\" \"" + assemblyPath + "\"";
+                                var exeCandidate = Path.ChangeExtension(assemblyPath, ".exe");
+                                if (File.Exists(exeCandidate))
+                                {
+                                    runCommand = "\"" + exeCandidate + "\"";
+                                }
+                                else
+                                {
+                                    // Fall back to host process (usually dotnet) with dll as argument
+                                    var host = Process.GetCurrentProcess().MainModule?.FileName;
+                                    if (!string.IsNullOrEmpty(host))
+                                    {
+                                        runCommand = "\"" + host + "\" \"" + assemblyPath + "\"";
+                                    }
+                                    else
+                                    {
+                                        // Last resort: quote the dll path (may prompt the user on startup)
+                                        runCommand = "\"" + assemblyPath + "\"";
+                                    }
+                                }
                             }
                             else
                             {
-                                // Last resort: quote the dll path (may prompt the user on startup)
+                                // assembly is an exe
                                 runCommand = "\"" + assemblyPath + "\"";
                             }
                         }
+
+                        // If still unknown, try current process main module
+                        if (string.IsNullOrEmpty(runCommand))
+                        {
+                            var proc = Process.GetCurrentProcess();
+                            var procExe = proc.MainModule?.FileName;
+                            if (!string.IsNullOrEmpty(procExe))
+                            {
+                                runCommand = "\"" + procExe + "\"";
+                            }
+                        }
+
+                        if (string.IsNullOrEmpty(runCommand))
+                            return;
+
+                        using var key = Registry.CurrentUser.OpenSubKey(@"Software\\Microsoft\\Windows\\CurrentVersion\\Run", true);
+                        if (key == null) return;
+                        key.SetValue("RandomDiscordHintergrund", runCommand);
+                        Console.WriteLine(Localization.T("autorun.registered") + " -> " + runCommand);
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        // assembly is an exe
-                        runCommand = "\"" + assemblyPath + "\"";
+                        WriteLogAndExit(10, ex.Message); // exit code 10 = autorun registration error
                     }
                 }
-
-                // If still unknown, try current process main module
-                if (string.IsNullOrEmpty(runCommand))
-                {
-                    var proc = Process.GetCurrentProcess();
-                    var procExe = proc.MainModule?.FileName;
-                    if (!string.IsNullOrEmpty(procExe))
-                    {
-                        runCommand = "\"" + procExe + "\"";
-                    }
-                }
-
-                if (string.IsNullOrEmpty(runCommand))
-                    return;
-
-                using var key = Registry.CurrentUser.OpenSubKey(@"Software\\Microsoft\\Windows\\CurrentVersion\\Run", true);
-                if (key == null) return;
-                key.SetValue("RandomDiscordHintergrund", runCommand);
-                Console.WriteLine(Localization.T("autorun.registered") + " -> " + runCommand);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(string.Format(Localization.T("autorun.error"), ex.Message));
             }
         }
 
-        
+
 
         // Versucht, den Vencord-Ordner automatisch zu ermitteln, andernfalls fragt den Benutzer.
         // Gibt "" zurück, wenn abgebrochen.
@@ -556,8 +672,43 @@ namespace Random_Discord_Hintergrund
             }
         }
 
-        private static void WriteLogAndExit(int exitCode)
+        private static void WriteLogAndExit(int exitCode, string ex)
         {
+            // Ausgabe des Exit-Grunds
+            string cause = string.Empty;
+            if (exitCode < 3)
+            {
+                cause = exitCode switch
+                {
+                    0 => String.Empty,
+                    1 => Localization.T("program.exit.nopause"), // no pause
+                    2 => Localization.T("program.exit.debug"), // debug mode
+                    _ => Localization.T("undefined.error"), // undefined error
+                };
+            }
+            else
+            {
+                cause = string.Format(Localization.T("error.details"), exitCode switch
+                {
+                    3 => Localization.T("source.invalid"), // invalid source directory
+                    4 => Localization.T("vencord.invalid"), // invalid Vencord directory
+                    5 => string.Format(Localization.T("theme.download.error"), ex), // theme file download error
+                    6 => string.Format(Localization.T("theme.read.error"), ex), // theme file read error
+                    7 => Localization.T("no.new.image"), // no new image found
+                    8 => string.Format(Localization.T("copy.error"), ex), // copy error
+                    9 => string.Format(Localization.T("writing.theme.error"), ex), // theme file write error
+                    10 => string.Format(Localization.T("autorun.error"), ex), // autorun registration error
+                    11 => string.Format(Localization.T("config.save.error"), ex), // config save error
+                    _ => Localization.T("undefined.error"), // undefined error
+                }) + "\n-->exit-code " + exitCode;
+            }
+            //  Ausgabe des Grundes vor dem Log
+            if (exitCode > 3)
+                Console.WriteLine(Localization.T("program.exit.error.occured"));
+
+            if (!string.IsNullOrEmpty(cause))
+                Console.WriteLine("-->" + cause);
+
             try
             {
                 // Flush Console writers
@@ -588,6 +739,13 @@ namespace Random_Discord_Hintergrund
             }
             finally
             {
+                // Pause nur bei Fehlern oder im Debug-Modus
+                if (exitCode > 0)
+                {
+                    Console.WriteLine(Localization.T("program.exit.pause"));
+                    Console.ReadLine();
+                }
+                // Exit
                 Environment.Exit(exitCode);
             }
         }
@@ -794,19 +952,20 @@ namespace Random_Discord_Hintergrund
         // Kleine POCO-Klasse für die Konfiguration
         internal class Config
         {
-            public string SourceDirectory { get; set; } = string.Empty;
-            public string VencordDirectory { get; set; } = string.Empty;
+            public string SourceDirectory { get; set; } = string.Empty; // Quellordner mit Bildern
+            public string VencordDirectory { get; set; } = string.Empty; // Basisordner von Vencord
             public bool AutoRun { get; set; } = false; // wenn true, wird ein Autostart-Eintrag gesetzt
             public bool AutoRunSet { get; set; } = false; // wurde der Benutzer bereits gefragt?
             public bool HasRunBefore { get; set; } = false; // wird nach dem ersten Durchlauf gesetzt
             public string? Language { get; set; } = "de"; // default deutsch
-            public bool LanguageSet { get; set; } = false;
+            public bool LanguageSet { get; set; } = false; // wurde der Benutzer bereits gefragt?
+            public bool AccentColorBright { get; set; } = false; // wenn true, wird eine hellere Akzentfarbe gewählt
         }
 
         // Einfache Lokalisierungs-Hilfe: lädt JSON-Dateien aus dem 'lang' Ordner
         internal static class Localization
         {
-            private static Dictionary<string, string> _map = [];
+            private static Dictionary<string, string> _map = new Dictionary<string, string>();
             private static string _lang = "en";
 
             public static void Init(string lang)
@@ -889,6 +1048,5 @@ namespace Random_Discord_Hintergrund
                 return key;
             }
         }
-
     }
 }

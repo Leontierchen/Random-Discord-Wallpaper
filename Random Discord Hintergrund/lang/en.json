@@ -1,4 +1,5 @@
 {
+  "language.name": "English",
   "source.invalid": "No valid source folder specified — exiting.",
   "vencord.invalid": "No valid Vencord folder specified — exiting.",
   "autorun.ask": "Do you want this program to run automatically at Windows startup?",
@@ -17,7 +18,8 @@
   "random.found": "Random image found: {0}, copying",
   "copy.error": "Error copying file: {0}",
   "copied.update.theme": "Copied, updating Vencord theme",
-  "vibrant.color": "Vibrant Color HSL: H={0}, S={1}%, L={2}%",
+  "vibrant.color.new": "New accent color",
+  "vibrant.color.old": "Old accent color",
   "writing.theme.error": "Error writing theme file: {0}",
   "delete.old.warn": "Warning: old image could not be deleted: {0}",
   "done": "Done!",
@@ -35,5 +37,10 @@
   "source.cancel.info": "Enter 'cancel' or leave blank to abort.",
   "source.input": "SourceDirectory: ",
   "source.notexist": "The specified folder does not exist. Please try again.",
-  "log.written": "Log written: {0}"
+  "log.written": "Log written: {0}",
+  "bright.accent.used": "Bright accent color is being used.",
+  "program.exit.nopause": "Pause on exit (autorun disabled).",
+  "program.exit.debug": "Debug mode — pausing for inspection.",
+  "program.exit.error.occured": "An error occurred. Please contact the developer and attach the log file. Discord (https://discord.gg/fxaSm3aU6W)",
+  "error.details": "Error details: {0}"
 }
