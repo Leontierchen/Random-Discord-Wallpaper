@@ -7,7 +7,7 @@
   "invalid.input": "Entrada no válida, por favor introduzca 'y' o 'n'.",
   "config.saved": "Configuración guardada en: {0}",
   "autorun.warn": "Advertencia al registrar la ejecución automática: {0}",
-  "first.run.pause": "Primera ejecución detectada. Pulse Intro para cerrar esta ventana.",
+  "first.run.pause": "Pulse Intro para cerrar esta ventana.",
   "config.save.error": "Advertencia: no se pudo guardar la configuración: {0}",
   "theme.download.start": "Archivo de tema no encontrado, intentando descargar desde GitHub...",
   "theme.downloaded": "Tema descargado.",
@@ -43,5 +43,9 @@
   "program.exit.debug": "Modo de depuración — pausa para inspección.",
   "program.exit.error.occured": "Ocurrió un error. Por favor, contacte al desarrollador y adjunte el archivo de registro. Discord (https://discord.gg/fxaSm3aU6W)",
   "error.details": "Detalles del error: {0}",
-  "image.load.error": "Error al cargar la imagen: {0}"
+  "image.load.error": "Error al cargar la imagen: {0}",
+  "first.run.welcome": "Solo necesitamos configurar algunas cosas antes de comenzar.",
+  "AccentcolorBright.prompt": "¿Usar texto claro en colores de acento oscuros? Esto puede mejorar la legibilidad en colores de acento oscuros. [y/n]: ",
+  "UseSubfolders.Prompt": "¿Desea incluir subcarpetas al buscar imágenes? [y/n]: ",
+  "first.run.complete": "¡Configuración completa! El programa ahora se ejecutará y establecerá un fondo de Discord aleatorio. Si necesita cambiar las opciones en el futuro, consulte el 'config.json'"
 }

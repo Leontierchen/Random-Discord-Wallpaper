@@ -226,9 +226,48 @@ namespace Random_Discord_Hintergrund
                     Console.WriteLine(string.Format(Localization.T("autorun.warn"), ex.Message));
                 }
 
-                // Wenn das Programm zum ersten Mal ausgeführt wird, pausiere die Konsole
+                // Wenn das Programm zum ersten Mal ausgeführt wird, frage noch ein paar weitere optionen und pausiere die Konsole
                 if (!config.HasRunBefore)
                 {
+                    Console.WriteLine(Localization.T("first.run.welcome"));
+                    while (true)
+                    {
+                        Console.Write(Localization.T("AccentcolorBright.prompt"));
+                        var answer = Console.ReadLine();
+                        if (string.IsNullOrWhiteSpace(answer)) continue;
+                        answer = answer.Trim().ToLowerInvariant();
+                        if (answer == "j" || answer == "y")
+                        {
+                            config.AccentColorBright = true;
+                            break;
+                        }
+                        if (answer == "n")
+                        {
+                            config.AccentColorBright = false;
+                            break;
+                        }
+                        Console.WriteLine(Localization.T("invalid.input"));
+                    }
+                    
+                    while (true)
+                    {
+                        Console.Write(Localization.T("UseSubfolders.Prompt"));
+                        var answer = Console.ReadLine();
+                        if (string.IsNullOrWhiteSpace(answer)) continue;
+                        answer = answer.Trim().ToLowerInvariant();
+                        if (answer == "j" || answer == "y")
+                        {
+                            config.UseSubfolders = true;
+                            break;
+                        }
+                        if (answer == "n")
+                        {
+                            config.UseSubfolders = false;
+                            break;
+                        }
+                        Console.WriteLine(Localization.T("invalid.input"));
+                    }
+                    Console.WriteLine(Localization.T("first.run.complete"));
                     Console.WriteLine(Localization.T("first.run.pause"));
                     Console.ReadLine();
                     config.HasRunBefore = true;

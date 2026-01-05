@@ -7,7 +7,7 @@
   "invalid.input": "Invalid input, please enter 'y' or 'n'.",
   "config.saved": "Configuration saved to: {0}",
   "autorun.warn": "Warning while registering autorun: {0}",
-  "first.run.pause": "First run detected. Press Enter to close this window.",
+  "first.run.pause": "Press Enter to close this window.",
   "config.save.error": "Warning: Configuration could not be saved: {0}",
   "theme.download.start": "Theme file not found, attempting to download from GitHub...",
   "theme.downloaded": "Theme downloaded.",
@@ -43,5 +43,9 @@
   "program.exit.debug": "Debug mode — pausing for inspection.",
   "program.exit.error.occured": "An error occurred. Please contact the developer and attach the log file. Discord (https://discord.gg/fxaSm3aU6W)",
   "error.details": "Error details: {0}",
-  "image.load.error": "Error loading image: {0}"
+  "image.load.error": "Error loading image: {0}",
+  "first.run.welcome": "We just need to set up a few things before we get started.",
+  "AccentcolorBright.prompt": "Use bright text on dark accent colors? This can improve readability on dark accent colours. [y/n]: ",
+  "UseSubfolders.Prompt": "Do you want to include subfolders when searching for images? [y/n]: "
+  "first.run.complete": "Setup complete! The program will now run and set a random Discord background. If you need to change the Options in the future, please check the 'config.json'"
 }

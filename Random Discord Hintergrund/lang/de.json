@@ -7,7 +7,7 @@
   "invalid.input": "Ungültige Eingabe, bitte 'j' oder 'n' eingeben.",
   "config.saved": "Konfiguration gespeichert in: {0}",
   "autorun.warn": "Warnung beim Registrieren des Autostarts: {0}",
-  "first.run.pause": "Erststart erkannt. Drücke Enter, um das Fenster zu schließen.",
+  "first.run.pause": "Drücke Enter, um das Fenster zu schließen.",
   "config.save.error": "Warnung: Konfiguration konnte nicht gespeichert werden: {0}",
   "theme.download.start": "Theme-Datei nicht gefunden, versuche sie von GitHub herunterzuladen...",
   "theme.downloaded": "Theme heruntergeladen.",
@@ -43,5 +43,9 @@
   "program.exit.debug": "Debug-Modus — Pause zur Inspektion.",
   "program.exit.error.occured": "Ein Fehler ist aufgetreten. Bitte kontaktiere den Entwickler und füge die Log-Datei bei. Discord (https://discord.gg/fxaSm3aU6W)",
   "error.details": "Fehlerdetails: {0}",
-  "image.load.error": "Fehler beim Laden des Bildes: {0}"
+  "image.load.error": "Fehler beim Laden des Bildes: {0}",
+  "first.run.welcome": "Wir müssen nur ein paar Dinge einrichten, bevor wir loslegen.",
+  "AccentcolorBright.prompt": "Helle Schrift auf dunklen Akzentfarben verwenden? Dies kann die Lesbarkeit bei dunklen Akzentfarben verbessern. [j/n]: ",
+  "UseSubfolders.Prompt": "Möchten Sie Unterordner bei der Suche nach Bildern einbeziehen? [j/n]: ",
+  "first.run.complete": "Einrichtung abgeschlossen! Das Programm wird jetzt ausgeführt und setzt einen zufälligen Discord-Hintergrund. Wenn Sie die Optionen in Zukunft ändern müssen, überprüfen Sie bitte die 'config.json'"
 }
