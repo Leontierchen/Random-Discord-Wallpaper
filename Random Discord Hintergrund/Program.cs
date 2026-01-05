@@ -7,6 +7,7 @@ using System.Runtime.Versioning;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using static Random_Discord_Hintergrund.Program;
 
 namespace Random_Discord_Hintergrund
 {
@@ -199,7 +200,6 @@ namespace Random_Discord_Hintergrund
                         if (answer == "j" || answer == "y")
                         {
                             config.AutoRun = true;
-                            config.AutoRunSet = true;
                             break;
                         }
                         if (answer == "n")
@@ -219,7 +219,8 @@ namespace Random_Discord_Hintergrund
                 // Registrierung für Autostart (sofern gewünscht)
                 try
                 {
-                    EnsureStartupRegistered(config);
+                    EnsureStartupRegistered(config); //aktualisiert config.AutoRunSet
+                    config.AutoRunSet = true;
                 }
                 catch (Exception ex)
                 {
@@ -554,9 +555,9 @@ namespace Random_Discord_Hintergrund
         [SupportedOSPlatform("windows")]
         private static void EnsureStartupRegistered(Config cfg)
         {
-            if (!cfg.AutoRunSet)
+            if (cfg.AutoRunSet == false)
             {
-                if (!cfg.AutoRun)
+                if (cfg.AutoRun == true)
                 {
                     try
                     {
