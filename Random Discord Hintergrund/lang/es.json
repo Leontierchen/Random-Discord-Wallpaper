@@ -42,5 +42,6 @@
   "program.exit.nopause": "Pausa al salir (ejecución automática deshabilitada).",
   "program.exit.debug": "Modo de depuración — pausa para inspección.",
   "program.exit.error.occured": "Ocurrió un error. Por favor, contacte al desarrollador y adjunte el archivo de registro. Discord (https://discord.gg/fxaSm3aU6W)",
-  "error.details": "Detalles del error: {0}"
+  "error.details": "Detalles del error: {0}",
+  "image.load.error": "Error al cargar la imagen: {0}"
 }

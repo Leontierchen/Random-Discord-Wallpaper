@@ -42,5 +42,6 @@
   "program.exit.nopause": "Pause à la sortie (exécution automatique désactivée).",
   "program.exit.debug": "Mode débogage — pause pour inspection.",
   "program.exit.error.occured": "Une erreur est survenue. Veuillez contacter le développeur et joindre le fichier journal. Discord (https://discord.gg/fxaSm3aU6W)",
-  "error.details": "Détails de l'erreur : {0}"
+  "error.details": "Détails de l'erreur : {0}",
+  "image.load.error": "Erreur lors du chargement de l'image : {0}"
 }

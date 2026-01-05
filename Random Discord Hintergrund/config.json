@@ -1,10 +1,11 @@
 ﻿{
-  "SourceDirectory": "C:\\Users\\username\\Documents\\wallpaper\\landscape\\optimal",
+  "SourceDirectory": "C:\\Users\\username\\Documents\\wallpaper",
   "VencordDirectory": "C:\\Users\\username\\AppData\\Roaming\\Vencord",
   "AutoRun": false,
   "AutoRunSet": false,
   "HasRunBefore": false,
   "Language": "de",
   "LanguageSet": false,
-  "AccentColorBright": false
+  "AccentColorBright": false,
+  "UseSubfolders": false
 }

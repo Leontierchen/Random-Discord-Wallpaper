@@ -7,7 +7,6 @@ using System.Runtime.Versioning;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using static Random_Discord_Hintergrund.Program;
 
 namespace Random_Discord_Hintergrund
 {
@@ -312,7 +311,7 @@ namespace Random_Discord_Hintergrund
             Console.WriteLine(string.Format(Localization.T("searching.random"), (filenameold ?? "<keines>")));
 
             // -------------------- Neues zufälliges Bild wählen --------------------
-            string? randomimage = GetRandomFile(sourcedirectory, filenameold);
+            string? randomimage = GetRandomFile(sourcedirectory, filenameold, config.UseSubfolders);
             if (string.IsNullOrEmpty(randomimage))
             {
                 WriteLogAndExit(7, "0"); // exit code 7 = no new image found
@@ -460,12 +459,18 @@ namespace Random_Discord_Hintergrund
         /// <param name="sourceDirectory">Quellordner mit Bildern</param>
         /// <param name="filenameOld">Dateiname, der ausgeschlossen werden soll</param>
         /// <returns>Pfad zur ausgewählten Datei oder null</returns>
-        public static string? GetRandomFile(string sourceDirectory, string? filenameOld)
+        public static string? GetRandomFile(string sourceDirectory, string? filenameOld, bool useSubfolders)
         {
             if (!Directory.Exists(sourceDirectory))
                 return null;
 
-            var files = Directory.GetFiles(sourceDirectory, "*");
+            var searchOption = useSubfolders 
+                ? SearchOption.AllDirectories 
+                : SearchOption.TopDirectoryOnly;
+            var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {".jpg", ".jpeg", ".png", ".bmp", ".webp"};
+
+            var files = Directory.GetFiles(sourceDirectory, "*", searchOption).Where(f => allowedExtensions.Contains(Path.GetExtension(f))).ToArray();
             if (files.Length == 0)
                 return null;
 
@@ -700,6 +705,7 @@ namespace Random_Discord_Hintergrund
                     9 => string.Format(Localization.T("writing.theme.error"), ex), // theme file write error
                     10 => string.Format(Localization.T("autorun.error"), ex), // autorun registration error
                     11 => string.Format(Localization.T("config.save.error"), ex), // config save error
+                    12 => string.Format(Localization.T("image.load.error"), ex), // image load error in image color helper
                     _ => Localization.T("undefined.error"), // undefined error
                 }) + "\n-->exit-code " + exitCode;
             }
@@ -870,45 +876,54 @@ namespace Random_Discord_Hintergrund
 
         public static class ImageColorHelper
         {
+            
+
             [SupportedOSPlatform("windows6.1")]
             public static string GetVibrantColorHSL(string imagePath)
             {
-                using Bitmap bmp = new(imagePath);
-
-                float bestScore = 0f;
-                float bestH = 0f, bestS = 0f, bestL = 0f;
-
-                // Schrittweite reduzieren für große Bilder, um Laufzeit zu verringern
-                int step = Math.Max(1, Math.Min(bmp.Width, bmp.Height) / 100);
-
-                for (int y = 0; y < bmp.Height; y += step)
+                try
                 {
-                    for (int x = 0; x < bmp.Width; x += step)
+                    using Bitmap bmp = new(imagePath);
+                    float bestScore = 0f;
+                    float bestH = 0f, bestS = 0f, bestL = 0f;
+
+                    // Schrittweite reduzieren für große Bilder, um Laufzeit zu verringern
+                    int step = Math.Max(1, Math.Min(bmp.Width, bmp.Height) / 100);
+
+                    for (int y = 0; y < bmp.Height; y += step)
                     {
-                        Color c = bmp.GetPixel(x, y);
-                        // Ignoriere fast transparente Pixel
-                        if (c.A < 200) continue;
-
-                        // Konvertiere RGB -> HSL
-                        RgbToHsl(c, out float h, out float s, out float l);
-
-                        // Vibrant-Bewertung:
-                        // hohe Sättigung + Lightness nahe 0.5 (nicht zu dunkel/hell) ist gewünscht
-                        float lightnessWeight = 1f - Math.Abs(l - 0.5f);
-                        float score = s * lightnessWeight;
-
-                        if (score > bestScore)
+                        for (int x = 0; x < bmp.Width; x += step)
                         {
-                            bestScore = score;
-                            bestH = h;
-                            bestS = s;
-                            bestL = l;
+                            Color c = bmp.GetPixel(x, y);
+                            // Ignoriere fast transparente Pixel
+                            if (c.A < 200) continue;
+
+                            // Konvertiere RGB -> HSL
+                            RgbToHsl(c, out float h, out float s, out float l);
+
+                            // Vibrant-Bewertung:
+                            // hohe Sättigung + Lightness nahe 0.5 (nicht zu dunkel/hell) ist gewünscht
+                            float lightnessWeight = 1f - Math.Abs(l - 0.5f);
+                            float score = s * lightnessWeight;
+
+                            if (score > bestScore)
+                            {
+                                bestScore = score;
+                                bestH = h;
+                                bestS = s;
+                                bestL = l;
+                            }
                         }
                     }
-                }
 
-                // Rückgabe als H_S_L (H 0–360, S/L 0–1)
-                return $"{bestH:F1}_{bestS:F2}_{bestL:F2}";
+                    // Rückgabe als H_S_L (H 0–360, S/L 0–1)
+                    return $"{bestH:F1}_{bestS:F2}_{bestL:F2}";
+                }
+                catch (Exception ex)
+                {
+                    WriteLogAndExit(12, $"{ex.Message} Image Path {imagePath}"); // exit code 12 = image load error
+                    return "0_0_0"; // unreachable, aber kompiliert sauber
+                }
             }
 
             /// <summary>
@@ -961,6 +976,7 @@ namespace Random_Discord_Hintergrund
             public string? Language { get; set; } = "de"; // default deutsch
             public bool LanguageSet { get; set; } = false; // wurde der Benutzer bereits gefragt?
             public bool AccentColorBright { get; set; } = false; // wenn true, wird eine hellere Akzentfarbe gewählt
+            public bool UseSubfolders { get; set; } = false; // wenn true, werden Unterordner im Quellverzeichnis durchsucht
         }
 
         // Einfache Lokalisierungs-Hilfe: lädt JSON-Dateien aus dem 'lang' Ordner

@@ -42,5 +42,6 @@
   "program.exit.nopause": "Pause on exit (autorun disabled).",
   "program.exit.debug": "Debug mode — pausing for inspection.",
   "program.exit.error.occured": "An error occurred. Please contact the developer and attach the log file. Discord (https://discord.gg/fxaSm3aU6W)",
-  "error.details": "Error details: {0}"
+  "error.details": "Error details: {0}",
+  "image.load.error": "Error loading image: {0}"
 }

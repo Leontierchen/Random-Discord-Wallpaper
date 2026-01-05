@@ -42,5 +42,6 @@
   "program.exit.nopause": "Pause beim Beenden (Autostart deaktiviert).",
   "program.exit.debug": "Debug-Modus — Pause zur Inspektion.",
   "program.exit.error.occured": "Ein Fehler ist aufgetreten. Bitte kontaktiere den Entwickler und füge die Log-Datei bei. Discord (https://discord.gg/fxaSm3aU6W)",
-  "error.details": "Fehlerdetails: {0}"
+  "error.details": "Fehlerdetails: {0}",
+  "image.load.error": "Fehler beim Laden des Bildes: {0}"
 }
