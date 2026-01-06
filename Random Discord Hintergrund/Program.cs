@@ -534,13 +534,7 @@ namespace Random_Discord_Hintergrund
             if (IsDebug)
                 Console.WriteLine("Lade Konfiguration...");
 
-            var possible = new[] {
-                Path.Combine(AppContext.BaseDirectory, "config.json"),
-                Path.Combine(Directory.GetCurrentDirectory(), "config.json"),
-                Path.Combine(AppContext.BaseDirectory, "lang", "config.json"),
-                Path.Combine(AppContext.BaseDirectory, "log", "config.json"),
-                Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "config.json"),
-            };
+            var possible = GetConfigSearchPaths().Cast<string>().ToArray();
             if (IsDebug)
             {
                 Console.WriteLine("Suche nach config.json in folgenden Pfaden:");
@@ -574,19 +568,24 @@ namespace Random_Discord_Hintergrund
         // Ermittelt den Pfad zur config.json: existierende Datei falls vorhanden, sonst Standard im BaseDirectory
         private static string GetConfigFilePath()
         {
-            var possible = new[] {
-                Path.Combine(AppContext.BaseDirectory, "config.json"),
-                Path.Combine(Directory.GetCurrentDirectory(), "config.json"),
-                Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "config.json")
-            };
-
+            var possible = GetConfigSearchPaths().Cast<string>().ToArray();
             var found = possible.FirstOrDefault(File.Exists);
             if (!string.IsNullOrEmpty(found)) return found!;
 
             // Standardpfad neben der EXE
             return Path.Combine(AppContext.BaseDirectory, "config.json");
         }
-
+        
+        private static Array GetConfigSearchPaths()
+        {
+            return new[] {
+                Path.Combine(AppContext.BaseDirectory, "logs", "config.json"),
+                Path.Combine(AppContext.BaseDirectory, "config.json"),
+                Path.Combine(Directory.GetCurrentDirectory(), "config.json"),
+                Path.Combine(AppContext.BaseDirectory, "lang", "config.json"),
+                Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "config.json"),
+            };
+        }
         // Speichert die Konfiguration als prettified JSON an dem angegebenen Pfad
         private static void SaveConfig(Config cfg, string path)
         {
